@@ -8,6 +8,7 @@ var pageIndex = 1;
 var pageCount = 1;
 var JIRA;
 var Projects = '';
+var base_url = '';
 
 Date.prototype.toDateInputValue = (function () {
     var local = new Date(this);
@@ -47,6 +48,7 @@ function init(options) {
 
     maxResults = !options.itemsOnPage ? 10 : options.itemsOnPage;
 
+    base_url = options.baseUrl;
     JIRA = JiraAPI(options.baseUrl, options.apiExtension, options.username, options.password, options.jql);
 
     ShowProjectsDropDown(options.projects, options.project);
@@ -56,7 +58,7 @@ function init(options) {
     $("#paging").on('click', "#next, #prev", function (evt) {
         var $self = $(this);
         var direction = $self.data("direction");
-        if (pageIndex == 1 && direction == "prev" || direction == "next" && pageIndex == pageCount) {
+        if (pageIndex === 1 && direction === "prev" || direction === "next" && pageIndex === pageCount) {
             return false;
         }
 
@@ -84,9 +86,6 @@ function onFetchSuccess(response) {
 
     $("#total_pages").text(pageCount);
     drawIssuesTable(issues);
-    if (issues.length > 0) {
-        JIRA.getTransitions(issues[0].key, onGetTransitionsSuccess, genericResponseError);
-    }
 
     $('div[id=loader-container]').hide();
 
@@ -157,8 +156,11 @@ function sumWorklogs(worklogs) {
 
 function generateLogTableRow(id, summary) {
 	var icon = buildHTML("img", null, {src:summary.fields.issuetype.iconUrl, style:"vertical-align:bottom"});
-	
-    var idCell = buildHTML('td', icon[0].outerHTML + id, { class: 'issue-id' });
+
+	var idText = icon[0].outerHTML + '&nbsp;' + id;
+	var href = base_url + 'browse/' + id;
+	var idLink = buildHTML('a', idText, { href: href, target: '_blank' });
+    var idCell = buildHTML('td', idLink, { class: 'issue-id' });
 
     var summaryCell = buildHTML('td', summary.fields.summary, { class: 'issue-summary truncate', title: summary.fields.summary });
 
@@ -182,11 +184,11 @@ function generateLogTableRow(id, summary) {
     var dateInputCell = buildHTML('td');
     dateInputCell.append(dateInput);
 
-    statusCell = buildHTML('td');
+    var statusCell = buildHTML('td');
     var statusLoaderDiv = buildHTML('div', null, { class: 'loader-mini', 'data-status-loader-issue-id': id }).appendTo(statusCell);
     statusLoaderDiv.hide();
-    $select = GetStatusesDropDown({ "data-issue-id": id }).appendTo(statusCell);
-    $select.val(summary.fields.status.name);
+    var $select = getStatusesDropDown({ "data-issue-id": id }, summary.fields.status.name).appendTo(statusCell);
+    // $select.val(summary.fields.status.name);
     $select.on('change', updateStatus);
 
     var playButton = buildButton("play", id);
@@ -196,7 +198,7 @@ function generateLogTableRow(id, summary) {
     if (objectsToLog && !objectsToLog[id])
         objectsToLog[id] = {};
 
-    actionCell = buildHTML('td');
+    var actionCell = buildHTML('td', null, {class: 'action-container'});
     if (objectsToLog && objectsToLog[id] && !objectsToLog[id]["StartDate"]) {
         actionCell.append(playButton);
     }
@@ -274,7 +276,7 @@ function stopButtonClick(evt) {
         var minutes = totalMinutes % 60;
         var hours = totalMinutes > minutes ? (totalMinutes - minutes) / 60 : 0;
 
-        var text = (hours == 0 ? "" : hours + "h") + " " + minutes + "m";
+        var text = (hours === 0 ? "" : hours + "h") + " " + minutes + "m";
         $timeInput.val(text);
 
         delete objectsToLog[issueId]["StartDate"];
@@ -294,10 +296,10 @@ function buildHTML(tag, html, attrs) {
     if (html) 
 		$element.html(html);
 
-    for (attr in attrs) {
+    for (var attr in attrs) {
         if (attrs[attr] === false) continue;
-        if (attr == "text") $element.text(attrs[attr]);
-        if (attr == "value") $element.val(attrs[attr]);
+        if (attr === "text") $element.text(attrs[attr]);
+        if (attr === "value") $element.val(attrs[attr]);
         $element.attr(attr, attrs[attr]);
     }
     return $element;
@@ -319,7 +321,7 @@ function LoadData() {
 
 function buildButton(type, id) {
     var $button;
-    if (type == "play") {
+    if (type === "play") {
         $button = buildHTML("img", null, {
             src: "images/play.png",
             width: "16",
@@ -329,7 +331,7 @@ function buildButton(type, id) {
         });
         $button.on('click', playButtonClick);
     }
-    if (type == "stop") {
+    if (type === "stop") {
         $button = buildHTML("img", null, {
             src: "images/stop.png",
             width: "16",
@@ -339,7 +341,7 @@ function buildButton(type, id) {
         });
         $button.on('click', stopButtonClick);
     }
-    if (type == "pause") {
+    if (type === "pause") {
         $button = buildHTML("img", null, {
             src: "images/pause.png",
             width: "16",
@@ -348,7 +350,7 @@ function buildButton(type, id) {
             "data-issue-id": id
         });
     }
-    if (type == "save") {
+    if (type === "save") {
         $button = buildHTML("img", null, {
             src: "images/save.png",
             width: "16",
@@ -359,20 +361,6 @@ function buildButton(type, id) {
         $button.on('click', logTimeClick);
     }
     return $button;
-}
-
-function GetStatusesDropDown(attr) {
-    var $select = buildHTML("select", null, attr);
-
-    for (var i in projectStatuses) {
-        var itm = projectStatuses[i];
-        var $option = buildHTML("option", null, { text: itm.text, value: itm.text, "data-transition-id": itm.id });
-        $option.appendTo($select);
-    }
-
-    $($select.children()[0]).attr("selected", "selected");
-
-    return $select;
 }
 
 function genericResponseError(error) {
@@ -391,32 +379,16 @@ function genericResponseError(error) {
     }
 }
 
-function updateStatus(evt) {
-    var self = $(this);
-    var id = $(this).data("issue-id");
-    var statusId = $(this).find(":selected").data("transition-id");
-    var value = $(this).val();
-
-    var $div = $("div.loader-mini[data-status-loader-issue-id=" + id);
-    $div.show();
-    $(this).hide();
-
-    JIRA.changeStatus(id, statusId, function (data) {
-        self.show();
-        $div.hide();
-    }, genericResponseError);
-}
-
 function navigate(self, evt) {
     var direction = self.data("direction");
 
-    if (direction == "next") {
+    if (direction === "next") {
         startAt = startAt + maxResults;
         JIRA.getIssues(startAt, maxResults, onFetchSuccess, onFetchError);
         pageIndex++;
     }
 
-    if (direction == "prev") {
+    if (direction === "prev") {
         startAt = startAt - maxResults;
         JIRA.getIssues(startAt, maxResults, onFetchSuccess, onFetchError);
         pageIndex--;
@@ -460,6 +432,47 @@ function ProjectSelectChange(evt) {
     JIRA.getProjectStatuses(pname, ProjectStatuesSuccess, genericResponseError);
 }
 
+function getStatusesDropDown(attr, current_status) {
+    var issue_id =  attr["data-issue-id"];
+    var $select = buildHTML("select", null, {
+        class: 'issue-transitions', "data-issue-id": issue_id
+    });
+
+    for (var i in projectStatuses) {
+        var item = projectStatuses[i];
+        if (current_status && item.text !== current_status) continue;
+        var option_data = {
+            text: item.text, value: item.id, "data-transition-id": item.id
+        };
+        if (current_status && item.text === current_status)
+            option_data['selected'] = 'selected';
+        var $option = buildHTML("option", null, option_data);
+        $option.appendTo($select);
+    }
+
+    JIRA.getTransitions(issue_id, onGetTransitionsSuccess, genericResponseError);
+
+
+    function onGetTransitionsSuccess(data) {
+        var $select = $("select[data-issue-id='" + issue_id + "']");
+        fillTransitions($select, data.transitions);
+    }
+
+    return $select;
+}
+
+function fillTransitions($select, transitions) {
+    var selected_option = $select.val();
+    for (var i in transitions) {
+        var item = transitions[i];
+        if (selected_option === item.id) continue;
+        var $option = buildHTML("option", null, {
+            text: item.name, value: item.id, "data-transition-id": item.id
+        });
+        $option.appendTo($select);
+    }
+}
+
 function ProjectStatuesSuccess(data) {
     projectStatuses = [];
     if ($.type(data) === "array" && data.length > 0) {
@@ -480,16 +493,20 @@ function ProjectStatuesSuccess(data) {
     JIRA.getIssues(startAt, maxResults, onFetchSuccess, onFetchError);
 }
 
-function onGetTransitionsSuccess(data) {
-    projectStatuses = [];
-    if (data != null) {
-        var trans = data.transitions;
-        for (var i in trans) {
-            var itm = trans[i];
-            $("select option[value='" + itm.name + "'").attr("data-transition-id", itm.id);
-            projectStatuses.push({ id: itm.id, text: itm.name });
-        }
-    }
+function updateStatus(evt) {
+    var self = $(this);
+    var id = $(this).data("issue-id");
+    var statusId = $(this).find(":selected").data("transition-id");
+    var value = $(this).val();
+
+    var $div = $("div.loader-mini[data-status-loader-issue-id=" + id);
+    $div.show();
+    $(this).hide();
+
+    JIRA.changeStatus(id, statusId, function (data) {
+        self.show();
+        $div.hide();
+    }, genericResponseError);
 }
 
 function updateIcon() {
