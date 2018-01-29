@@ -9,12 +9,15 @@ div#table-container {
 a {
     color: #6495ED;
     text-decoration: none;
+}
+
+div.nav a {
     margin: 0 8px;
 }
 
-    a:hover, a:active, a:focus {
-        text-decoration: underline;
-    }
+a:hover, a:active, a:focus {
+    text-decoration: underline;
+}
 
 #error {
     padding: 10px;
@@ -62,7 +65,7 @@ th {
 }
 
 th, td {
-    padding: 6px;
+    padding: 5px;
     text-align: left;
 }
 
@@ -72,14 +75,27 @@ td {
     border-bottom: 1px solid #dddddd;
 }
 
+td.action-container, th.action-container {
+    text-align: right;
+    padding-right: 0;
+}
+
+td.total-time-container, th.total-time-container {
+    text-align: center;
+}
+
+td.issue-id {
+    padding-left: 0;
+}
+
 .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-input {
-    width: 95%;
+input, td select {
+    width: 97%;
     padding: 4px;
     font-size: 12px;
     border-radius: 2px;
