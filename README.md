@@ -8,7 +8,7 @@ Label which will be presented at the top
 
 ### URL 
 
-This is your Jira server URL. Copy entire url, with protocol and port (if not default).
+This is your Jira server URL. Copy entire url, with protocol and port (if not default). Example: `https://jira.example.net/`.
 
 ### REST Api Extension
 
