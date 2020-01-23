@@ -1,76 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>JIRA Time Tracker</title>
-	<link rel="stylesheet" type="text/css" href="styles\options.css" />
-</head>
+  <head>
+    <title>JIRA Time Tracker</title>
+    <link rel="stylesheet" type="text/css" href="styles\options.css" />
+  </head>
 
-<body>
+  <body>
+    <table>
+      <tr>
+        <td>
+          URL
+        </td>
+        <td>
+          <input id="baseUrl" type="text" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          REST Api Extension
+        </td>
+        <td>
+          <input id="apiExtension" type="text" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Username
+        </td>
+        <td>
+          <input id="username" type="text" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a
+            href="https://confluence.atlassian.com/cloud/api-tokens-938839638.html"
+            >Api token</a
+          >
+        </td>
+        <td>
+          <input id="password" type="password" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          number of items on page
+        </td>
+        <td>
+          <input id="itemsOnPage" type="text" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          JQL
+        </td>
+        <td>
+          <input id="jql" type="text" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Project keys <br />
+          Comma separated
+        </td>
+        <td>
+          <input type="text" id="projects" />
+        </td>
+      </tr>
+    </table>
 
-	<table>
-		<tr>
-			<td>
-				URL       
-			</td>
-			<td>
-				<input id="baseUrl" type="text" />
-			</td>
-		</tr>
-		<tr>
-			<td>
-				REST Api Extension
-			</td>
-			<td>
-				<input id="apiExtension" type="text" />
-			</td>
-		</tr>
-		<tr>
-			<td>
-				Username
-			</td>
-			<td>
-				<input id="username" type="text" />
-			</td>
-		</tr>
-		<tr>
-			<td>
-				Password       
-			</td>
-			<td>
-				<input id="password" type="password" />
-			</td>
-		</tr>
-        <tr>
-            <td>
-                number of items on page
-            </td>
-            <td>
-                <input id="itemsOnPage" type="text" />
-            </td>
-        </tr>
-		<tr>
-			<td>
-				JQL       
-			</td>
-			<td>
-				<input id="jql" type="text" />
-			</td>
-		</tr>
-		<tr>
-		<td>
-		Project keys <br/> Comma separated
-		</td>
-		<td>
-		<input type="text" id="projects" />
-		</td>
-		</tr>
-	</table>
+    <div id="status"></div>
 
-	<div id="status"></div>
+    <button id="save" class="btn">Save</button>
 
-	<button id="save" class="btn">Save</button>
-
-	<script src="scripts\options.js"></script>
-
-</body>
+    <script src="scripts\options.js"></script>
+  </body>
 </html>
